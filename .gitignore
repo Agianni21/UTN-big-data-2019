@@ -8,10 +8,10 @@
 *.ctxt
 
 #Gradle Files
-.gradle/*
+.gradle/
 
 #Idea files
-.idea/*
+.idea/
 
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/
