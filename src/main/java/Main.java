@@ -3,19 +3,9 @@ import org.bson.Document;
 import twitter4j.*;
 import twitter4j.conf.Configuration;
 import twitter4j.conf.ConfigurationBuilder;
-import com.mongodb.ConnectionString;
-
-import com.mongodb.ServerAddress;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.MongoCollection;
-import org.bson.Document;
-import java.util.Arrays;
-import com.mongodb.Block;
-
 import static com.mongodb.client.model.Filters.*;
-import com.mongodb.client.result.DeleteResult;
-import static com.mongodb.client.model.Updates.*;
-import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,23 +15,38 @@ public class Main {
     Twitter twitter;
 
     static public void main(String[] args) {
-        String searchWord = "futbol";
-        String filterRegex = "[Cc]lub";
-        // Conexion con mongito
 
-        /* FILTRO
-        FindIterable<Document> queryResult = collection.find(regex("text", "[Cc]lub"));
-        for (Document doc:queryResult) {
+        Main main = new Main();
+        if (main.argsAreValid(args)) {
+
+            String action = args[0];
+            if (action.equals("find")) {
+               main.scrapeTweetsAndStoreThem(args[1]);
+            }
+            else {
+               main.filterTweetsAndPrintThem(args[1]);
+            }
+        } else {
+            main.exitWithError("Invalid arguments");
+        }
+    }
+
+    private void filterTweetsAndPrintThem(String filterRegex) {
+        MongoCollection collection = getMongoCollection();
+        FindIterable<Document> selectedResults = collection.find(regex("text", filterRegex));
+        for (Document doc: selectedResults) {
             System.out.println(doc.toJson());
         }
-
-         */
     }
+
 
     private void scrapeTweetsAndStoreThem(String searchPhrase) {
         twitter = createTwitterInstance();
         Query query = buildTwitterQuery(searchPhrase);
         QueryResult result = processQuery(query);
+        if (result == null) {
+            return;
+        }
         MongoCollection collection = getMongoCollection();
         storeQueryResult(result, collection);
     }
@@ -76,6 +81,7 @@ public class Main {
         } catch (Exception e) {
             System.out.println("----------Query failed----------");
             System.out.println(e);
+            return null;
         }
     }
 
@@ -94,5 +100,21 @@ public class Main {
         MongoDatabase database = mongoClient.getDatabase("mydb");
         MongoCollection<Document> collection = database.getCollection("test");
         return collection;
+    }
+
+    private boolean argsAreValid(String[] args) {
+        if (args.length == 2) {
+            String actionArg = args[0];
+            if (actionArg.equals("find") || actionArg.equals("filter")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void exitWithError(String errorMessage) {
+        System.out.println("-------- Something failed ---------");
+        System.out.println(errorMessage);
+        System.out.println("-----------------------------------");
     }
 }
